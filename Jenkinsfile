@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/trend-deployment.git'
+                git branch: 'main', url: 'https://github.com/Balajiu97/Trend.git'
             }
         }
 
@@ -47,3 +47,4 @@ pipeline {
         }
     }
 }
+
