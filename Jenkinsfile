@@ -38,18 +38,18 @@ pipeline {
         }
 
         stage('Setup Kubeconfig') {
-            steps {
-                withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIALS_ID}", variable: 'KUBECONFIG_FILE')]) {
-                    sh """
-                      mkdir -p \$HOME/.kube
-                      cp "\$KUBECONFIG_FILE" \$HOME/.kube/config
-                      export KUBECONFIG=\$HOME/.kube/config
-                      kubectl cluster-info
-                      kubectl get nodes
-                    """
-                }
-            }
+    steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                          credentialsId: 'aws-eks-creds']]) {
+            sh '''
+                echo "🔑 Setting up kubeconfig for AWS EKS..."
+                aws eks update-kubeconfig --region us-east-1 --name my-cluster-v2
+                echo "✅ Kubeconfig setup complete"
+                kubectl get svc
+            '''
         }
+    }
+}
 
         stage('Apply Manifests (first/any run)') {
             steps {
@@ -75,4 +75,5 @@ pipeline {
         failure { echo "❌ Build or Deploy failed." }
     }
 }
+
 
