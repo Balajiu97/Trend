@@ -16,4 +16,4 @@ spec:
       - name: trend
         image: balajiyuva/trend-app-project:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 80
