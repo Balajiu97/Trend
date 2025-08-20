@@ -38,20 +38,19 @@ pipeline {
         }
 
         stage('Setup Kubeconfig') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-eks-credentials']]) {
-                    sh '''
-                       echo "🔑 Setting up kubeconfig for EKS..."
-                       aws eks update-kubeconfig \
-                          --region ${AWS_REGION} \
-                          --name ${EKS_CLUSTER}
-                       echo "✅ Kubeconfig setup complete"
-                       kubectl get nodes
-                    '''
-                }
-            }
+    steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                          credentialsId: 'aws-eks-creds']]) {
+            sh '''
+                echo "🔑 Setting up kubeconfig for AWS EKS..."
+                export KUBECONFIG=/var/lib/jenkins/.kube/config
+                aws eks update-kubeconfig --region us-east-1 --name my-cluster-v2
+                echo "✅ Kubeconfig setup complete"
+                kubectl get svc
+            '''
         }
+    }
+}
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -73,3 +72,4 @@ pipeline {
         }
     }
 }
+
