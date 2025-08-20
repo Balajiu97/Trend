@@ -40,7 +40,7 @@ pipeline {
         stage('Setup Kubeconfig') {
     steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                          credentialsId: 'aws-eks-creds']]) {
+                          credentialsId: 'aws-eks-credentials']]) {
             sh '''
                 echo "🔑 Setting up kubeconfig for AWS EKS..."
                 export KUBECONFIG=/var/lib/jenkins/.kube/config
@@ -72,4 +72,5 @@ pipeline {
         }
     }
 }
+
 
