@@ -4,8 +4,9 @@ pipeline {
     environment {
         DOCKER_IMAGE = "balajiyuva/trend-app-project"
         DOCKER_TAG   = "7"
-        AWS_REGION   = "us-east-1"          // <-- change to your EKS region
-        EKS_CLUSTER  = "my-cluster-v2"     // <-- change to your EKS cluster name
+        AWS_REGION   = "us-east-1"          // change to your EKS region
+        EKS_CLUSTER  = "my-cluster-v2"     // change to your EKS cluster name
+        KUBECONFIG   = "/var/lib/jenkins/.kube/config"
     }
 
     stages {
@@ -26,9 +27,11 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub_credentials',
-                                                 usernameVariable: 'DOCKER_USER',
-                                                 passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub_credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
@@ -38,27 +41,27 @@ pipeline {
         }
 
         stage('Setup Kubeconfig') {
-    steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                          credentialsId: 'aws-eks-credentials']]) {
-            sh '''
-                echo "🔑 Setting up kubeconfig for AWS EKS..."
-                export KUBECONFIG=/var/lib/jenkins/.kube/config
-                aws eks update-kubeconfig --region us-east-1 --name my-cluster-v2
-                echo "✅ Kubeconfig setup complete"
-                kubectl get svc
-            '''
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                  credentialsId: 'aws-eks-credentials']]) {
+                    sh """
+                        echo "🔑 Setting up kubeconfig for AWS EKS..."
+                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
+                        echo "✅ Kubeconfig setup complete"
+                        kubectl get nodes
+                        kubectl get svc
+                    """
+                }
+            }
         }
-    }
-}
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                   echo "🚀 Deploying new image to Kubernetes..."
-                   kubectl set image deployment/trend-app trend=${DOCKER_IMAGE}:${DOCKER_TAG}
-                   kubectl rollout status deployment/trend-app
-                '''
+                sh """
+                   echo "🚀 Running deployment script..."
+                   chmod +x deploy.sh
+                   ./deploy.sh ${DOCKER_IMAGE}:${DOCKER_TAG}
+                """
             }
         }
     }
@@ -72,5 +75,3 @@ pipeline {
         }
     }
 }
-
-
