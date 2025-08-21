@@ -4,8 +4,8 @@ pipeline {
     environment {
         DOCKER_IMAGE = "balajiyuva/trend-app-project"
         DOCKER_TAG   = "latest"
-        AWS_REGION   = "ap-south-1"          // change to your EKS region
-        EKS_CLUSTER  = "trend"     // change to your EKS cluster name
+        AWS_REGION   = "ap-south-1"      // your EKS region
+        EKS_CLUSTER  = "trend"           // your EKS cluster name
         KUBECONFIG   = "/var/lib/jenkins/.kube/config"
     }
 
@@ -32,27 +32,34 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
+                    sh """
                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                    '''
+                    """
                 }
             }
         }
 
         stage('Setup Kubeconfig') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-eks-credentials']]) {
+                withAWS(region: "${AWS_REGION}", credentials: 'aws-eks-credentials') {
                     sh """
                         echo "🔑 Setting up kubeconfig for AWS EKS..."
-                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
+                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER} --kubeconfig ${KUBECONFIG}
                         echo "✅ Kubeconfig setup complete"
                         kubectl get nodes
                         kubectl get svc
                         chmod +x deploy.sh
                     """
                 }
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                sh """
+                   ./deploy.sh
+                """
             }
         }
     }
@@ -66,5 +73,3 @@ pipeline {
         }
     }
 }
-
-
