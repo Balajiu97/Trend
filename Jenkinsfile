@@ -18,7 +18,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                sh """
+                   docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                """
             }
         }
 
@@ -30,8 +32,8 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                       echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                       docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
                     '''
                 }
             }
@@ -39,12 +41,19 @@ pipeline {
 
         stage('Setup Kubeconfig') {
             steps {
-                withAWS(credentials: 'aws-eks-credentials', region: "${AWS_REGION}") {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                  credentialsId: 'aws-eks-credentials']]) {
                     sh '''
-                        echo "🔑 Setting up kubeconfig for AWS EKS..."
-                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER} --kubeconfig kubeconfig.yaml
-                        export KUBECONFIG=kubeconfig.yaml
-                        echo "✅ Kubeconfig setup complete"
+                       echo "🔑 Setting up kubeconfig for AWS EKS..."
+                       export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                       export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                       export AWS_DEFAULT_REGION=${AWS_REGION}
+
+                       aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
+                       echo "✅ Kubeconfig setup complete"
+
+                       kubectl get nodes || true
+                       kubectl get svc || true
                     '''
                 }
             }
@@ -53,10 +62,9 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 sh '''
-                    echo "🚀 Running deploy.sh ..."
-                    chmod +x deploy.sh
-                    export KUBECONFIG=kubeconfig.yaml
-                    ./deploy.sh
+                   echo "🚀 Deploying application to EKS..."
+                   chmod +x deploy.sh
+                   ./deploy.sh
                 '''
             }
         }
