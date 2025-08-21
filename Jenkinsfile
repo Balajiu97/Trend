@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "balajiyuva/trend-app-project"
-        DOCKER_TAG   = "7"
-        AWS_REGION   = "us-east-1"          // change to your EKS region
+        DOCKER_TAG   = "latest"
+        AWS_REGION   = "ap-south-1"          // change to your EKS region
         EKS_CLUSTER  = "my-cluster-v2"     // change to your EKS cluster name
         KUBECONFIG   = "/var/lib/jenkins/.kube/config"
     }
@@ -75,3 +75,4 @@ pipeline {
         }
     }
 }
+
