@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = "balajiyuva/trend-app-project"
         DOCKER_TAG   = "latest"
         AWS_REGION   = "ap-south-1"          // change to your EKS region
-        EKS_CLUSTER  = "my-cluster-v2"     // change to your EKS cluster name
+        EKS_CLUSTER  = "trend"     // change to your EKS cluster name
         KUBECONFIG   = "/var/lib/jenkins/.kube/config"
     }
 
@@ -50,18 +50,9 @@ pipeline {
                         echo "✅ Kubeconfig setup complete"
                         kubectl get nodes
                         kubectl get svc
+                        chmod +x deploy.sh
                     """
                 }
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh """
-                   echo "🚀 Running deployment script..."
-                   chmod +x deploy.sh
-                   ./deploy.sh ${DOCKER_IMAGE}:${DOCKER_TAG}
-                """
             }
         }
     }
@@ -75,4 +66,5 @@ pipeline {
         }
     }
 }
+
 
