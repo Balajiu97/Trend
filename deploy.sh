@@ -3,7 +3,7 @@
 set -e
 
 echo "Logging into EKS cluster..."
-aws eks update-kubeconfig --region us-east-1 --name my-cluster
+aws eks update-kubeconfig --region ap-south-1 --name trend
 
 echo "Installing kubectl..."
 chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
